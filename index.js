@@ -45,7 +45,16 @@ view.create = function(settings, app) {
         var prototols = createHanlder(fis, bigpipe, settings.views);
         var engine = new Engine(settings);
         var bufs = [];
+
+        // 这个模式表示是一次请求局部内容的请求。
+        // 不需要把框架吐出来了。
+        // 只需输出 mode="quicking" 的 widget.
+        var isQuickingMode = bigpipe.isQuickingMode();
         var flush = function() {
+            if (isQuickingMode) {
+                return;
+            }
+
             while((d = bufs.shift())) {
                 d = fis.filter(d);
                 res.write(d);
@@ -67,11 +76,12 @@ view.create = function(settings, app) {
 
             engine.removeAllListeners();
 
-            if (~idx && bigpipe) {
-                idx += identify.length;
-                clouser = output.substring(idx);
-                output = output.substring(0, idx);
-
+            if (bigpipe && (~idx || isQuickingMode)) {
+                if (~idx) {
+                    idx += identify.length;
+                    clouser = output.substring(idx);
+                    output = output.substring(0, idx);
+                }
                 bufs.push(output);
                 flush();
 

@@ -1,6 +1,6 @@
 {
   "name": "yog-view",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "An express.js middleware for optimizing the order of js\\css output, and enabling render template in bigpipe mode.",
   "main": "index.js",
   "scripts": {
@@ -21,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/fex-team/yog-view/issues"
   },
-  "homepage": "https://github.com/fex-team/yog-view"
+  "homepage": "https://github.com/fex-team/yog-view",
+  "dependencies": {
+    "yog-swig": "0.0.4"
+  }
 }
