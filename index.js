@@ -68,7 +68,7 @@ view.create = function(settings, app) {
         engine.on('flush', flush);
 
         engine.on('end', function(output) {
-            output = output || bufs.pop();
+            output = output || bufs.pop() || '';
 
             var identify = '</body>';
             var idx = output.indexOf(identify);
