@@ -43,7 +43,7 @@ view.create = function(settings, app) {
 
         var fis = res.fis;
         var prototols = createHanlder(fis, bigpipe, settings.views);
-        var engine = new Engine(settings);
+        var engine = new Engine(settings, prototols);
         var bufs = [];
 
         // 这个模式表示是一次请求局部内容的请求。
@@ -125,6 +125,9 @@ function createHanlder(fis, bigpipe, views) {
     });
 
     api.resolve = function(id) {
+        if (!~id.indexOf(':')) {
+            return id;
+        }
         return path.join(views, fis.getUri(id));
     };
 
