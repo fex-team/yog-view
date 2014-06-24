@@ -95,6 +95,7 @@ view.create = function(settings, app) {
             }
 
             bufs.push(output);
+            flush();
             done();
         });
 
@@ -132,7 +133,7 @@ function createHanlder(fis, bigpipe, views) {
     };
 
     api.setFramework = function(js) {
-        fis.framework = js;
+        this.fis.framework = js;
     };
 
     api.supportBigPipe = function() {
@@ -140,7 +141,16 @@ function createHanlder(fis, bigpipe, views) {
     };
 
     api.fork = function(fis, bigpipe, views) {
-        views = views || api.views;
+        if (arguments.length === 0 ) {
+            fis = this.fis;
+            bigpipe = this.bigpipe;
+            views = this.views;
+        } else if (arguments.length === 1) {
+            bigpipe = this.bigpipe;
+            views = this.views;
+        } else if (arguments.length === 2) {
+            views = this.views;
+        }
 
         var forked = createHanlder(fis, bigpipe, views);
         return forked;
