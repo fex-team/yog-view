@@ -60,7 +60,10 @@ var view = module.exports = {
 
                 bufs.push(data || '');
                 flush();
-                res = null;
+                
+                res.end();
+                //res = null;
+
                 done();
             };
 
