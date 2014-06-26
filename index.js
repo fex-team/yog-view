@@ -19,76 +19,57 @@ var view = module.exports = {
             settings = {};
         }
 
+        // 让 response.render 的时候，将 response 实例作为 locals 参数携带进来。
         hackResponse(app);
 
         settings.views = app.get('views');
-
         Engine = view.engines[settings.engine || 'swig'];
 
         return function(filepath, options, done) {
             
             var res = options.response;
             var bigpipe = res.bigpipe;
-            var fis = res.fis;
-            var prototols = api(fis, bigpipe, settings.views);
+            var prototols = api(res.fis, bigpipe, settings.views);
             var engine = new Engine(settings, prototols);
-            
-            var bufs = [];
 
             // 这个模式表示是一次请求局部内容的请求。
             // 不需要把框架吐出来了。
             // 只需输出 mode="quicking" 的 widget.
             var isQuickingMode = bigpipe && bigpipe.isQuickingMode();
-            var flush = function() {
-                if (isQuickingMode) {
-                    return;
-                }
-
-                while((d = bufs.shift())) {
-                    d = prototols.filter(d);
-                    res.write(d);
-                }
-            };
 
             var finish = function(err, data) {
-                engine.destroy();
-                options.response = engine = bigpipe = fis = null;
-
                 if (err) {
                     return done(err);
                 }
-
-                bufs.push(data || '');
-                flush();
-                res = null;
+                data && res.write(data);
+                // prototols.destroy();
+                res = finish = null;
                 done();
             };
 
-            engine.on('data', function(d) {
-                bufs.push(d);
-            });
 
-            engine.on('flush', flush);
+            options._yog = prototols;
+            engine.renderFile(filepath, options, function(err, output) {
+                
+                if (err) {
+                    return finish(err);
+                }
 
-            engine.on('end', function(output) {
-                output = output || bufs.pop() || '';
+                output = prototols.filter(output);
 
-                var identify = '</body>';
-                var idx = output.indexOf(identify);
+                var identify = prototols.BIGPIPE_HOOK;
+                var idx = identify ? output.indexOf(identify) : -1;
                 var clouser = '';
                 
                 // bigpipe mode
                 if (bigpipe && (~idx || isQuickingMode)) {
                     
                     if (~idx) {
-                        idx += identify.length;
-                        clouser = output.substring(idx);
+                        clouser = output.substring(idx + identify.length);
                         output = output.substring(0, idx);
                     }
 
-                    // flush framework.
-                    bufs.push(output);
-                    flush();
+                    res.write(output);
 
                     // then chunk out pagelets
                     return bigpipe.render(res, finish.bind(this, null, clouser));
@@ -97,10 +78,6 @@ var view = module.exports = {
                 // otherwise 
                 finish(null, output);
             });
-
-            engine.on('error', finish);
-            options._yog = prototols;
-            engine.renderFile(filepath, options);
         }
     }
 };
