@@ -43,7 +43,7 @@ var view = module.exports = {
                 }
                 data && res.write(data);
                 // prototols.destroy();
-                res = finish = null;
+                res = finish = bigpipe = prototols = engine = null;
                 done();
             };
 
@@ -69,10 +69,10 @@ var view = module.exports = {
                         output = output.substring(0, idx);
                     }
 
-                    res.write(output);
+                    isQuickingMode || res.write(output);
 
                     // then chunk out pagelets
-                    return bigpipe.render(res, finish.bind(this, null, clouser));
+                    return bigpipe.render(res, finish.bind(this, null, isQuickingMode ? '' : clouser));
                 }
 
                 // otherwise 
