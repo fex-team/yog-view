@@ -3,7 +3,8 @@
 var response = require('./lib/response.js');
 var swig = require('yog-swig');
 var path = require('path');
-var api = require('./lib/api.js');
+var layer = require('./lib/layer.js');
+var combine = require('./lib/combine.js');
 var hacked = false;
 
 var view = module.exports = {
@@ -25,62 +26,60 @@ var view = module.exports = {
         settings.views = app.get('views');
         Engine = view.engines[settings.engine || 'swig'];
 
-        return function(filepath, options, done) {
+        return function(filepath, locals, done) {
             
-            var res = options.response;
-            var bigpipe = res.bigpipe;
-            var prototols = api(res.fis, bigpipe, settings.views);
-            var engine = new Engine(settings, prototols);
+            // 关于 response 来源，请查看 hackResponse 方法。
+            // 以及 lib/reponse.js
+            var res = locals.response;
 
-            // 这个模式表示是一次请求局部内容的请求。
-            // 不需要把框架吐出来了。
-            // 只需输出 mode="quicking" 的 widget.
-            var isQuickingMode = bigpipe && bigpipe.isQuickingMode();
+            // 创建一个新对象。
+            var options = mixin({}, settings);
+            
+            // 初始化 layer 层。
+            // 提供 addScript, addStyle, resolve, addPagelet 各种接口。
+            // 用来扩展模板层能力。
+            var prototols = layer(res.fis, res.bigpipe, settings.views);
 
-            var finish = function(err, data) {
-                if (err) {
-                    return done(err);
-                }
-                data && res.write(data);
-                // prototols.destroy();
-                res = finish = bigpipe = prototols = engine = null;
-                done();
-            };
+            // 模本文件路径
+            options.view = filepath;
 
+            // 模板变量。
+            // locals._yog 用来指向 layer 层。
+            options.locals = mixin(locals, {_yog: prototols});
 
-            options._yog = prototols;
-            engine.renderFile(filepath, options, function(err, output) {
-                
-                if (err) {
-                    return finish(err);
-                }
+            var tpl = new Engine(options, prototols);
 
-                output = prototols.filter(output);
+            tpl
+                // 合并 tpl 流 和 bigpipe 流。
+                .pipe(combine(prototols))
 
-                var identify = prototols.BIGPIPE_HOOK;
-                var idx = identify ? output.indexOf(identify) : -1;
-                var clouser = '';
-                
-                // bigpipe mode
-                if (bigpipe && (~idx || isQuickingMode)) {
-                    
-                    if (~idx) {
-                        clouser = output.substring(idx + identify.length);
-                        output = output.substring(0, idx);
-                    }
+                // 直接输出到 response.
+                .pipe(res);
 
-                    isQuickingMode || res.write(output);
+                // 如果不需要调用 done 方法，可以直接 .pipe(res);
+                // .on('data', function(chunk) {
+                //     res.write(chunk);
+                // })
 
-                    // then chunk out pagelets
-                    return bigpipe.render(res, finish.bind(this, null, isQuickingMode ? '' : clouser));
-                }
+                // .on('end', function() {
+                //     done();
+                // })
 
-                // otherwise 
-                finish(null, output);
-            });
+                // .on('error', function(reason) {
+                //     done(reason || 'tpl error!');
+                // });
         }
     }
 };
+
+function mixin(a, b) {
+    if (a && b) {
+        for (var key in b) {
+            a[key] = b[key];
+        }
+    }
+    return a;
+}
 
 // hack into response class.
 function hackResponse(app) {
