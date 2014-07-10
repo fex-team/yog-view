@@ -38,7 +38,7 @@ var view = module.exports = {
             // 初始化 layer 层。
             // 提供 addScript, addStyle, resolve, addPagelet 各种接口。
             // 用来扩展模板层能力。
-            var prototols = layer(res.fis, res.bigpipe, settings.views);
+            var prototols = layer(res, settings);
 
             // 模本文件路径
             options.view = filepath;
