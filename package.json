@@ -23,6 +23,6 @@
   },
   "homepage": "https://github.com/fex-team/yog-view",
   "dependencies": {
-    "yog-swig": "~0.0.7"
+    "caller": "0.0.1"
   }
 }
