@@ -19,14 +19,14 @@ exports.init = function(settings, app) {
     Engine = _.resolveEngine(settings.engine || 'yog-swig');
 
     return function(filepath, locals, done) {
-        
+
         // 关于 response 来源，请查看 hackResponse 方法。
         // 以及 lib/reponse.js
         var res = locals.response;
 
         // 创建一个新对象。
         var options = _.mixin({}, settings);
-        
+
         // 初始化 layer 层。
         // 提供 addScript, addStyle, resolve, addPagelet 各种接口。
         // 用来扩展模板层能力。
@@ -34,15 +34,10 @@ exports.init = function(settings, app) {
 
         var sentData = false;
 
-        // 模本文件路径
-        options.view = filepath;
-
-        // 模板变量。
-        // locals._yog 用来指向 layer 层。
-        options.locals = _.mixin(locals, {_yog: prototols});
-
         new Engine(options, prototols)
-            
+
+            .makeStream(filepath, _.mixin(locals, {_yog: prototols}))
+
             // 合并 tpl 流 和 bigpipe 流。
             .pipe(combine(prototols))
 
