@@ -62,7 +62,7 @@ exports.init = function(settings, app) {
 
             // 直接输出到 response.
             .pipe(res);
-    }
+    };
 };
 
 // hack into response class.
