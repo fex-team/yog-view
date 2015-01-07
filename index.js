@@ -5,27 +5,24 @@ var _ = require('./lib/util.js');
 
 
 exports.init = function(settings, app) {
-    var Engine;
+    var engine;
 
     if (arguments.length === 1) {
         app = settings;
         settings = {};
     }
 
-    // 让 response.render 的时候，将 response 实例作为 locals 参数携带进来。
-    hackResponse(app);
+    // 将res注入到locals中提供模板渲染时使用
+    app.use(function(req, res, next) {
+        res.locals.__res__ = res;
+        next();
+    });
 
     settings.views = app.get('views');
-    Engine = _.resolveEngine(settings.engine || 'yog-swig');
-
+    engine = new (_.resolveEngine(settings.engine || 'yog-swig'))(app, settings);
     return function(filepath, locals, done) {
 
-        // 关于 response 来源，请查看 hackResponse 方法。
-        // 以及 lib/reponse.js
-        var res = locals.response;
-
-        // 创建一个新对象。
-        var options = _.mixin({}, settings);
+        var res = locals.__res__;
 
         // 初始化 layer 层。
         // 提供 addScript, addStyle, resolve, addPagelet 各种接口。
@@ -34,15 +31,16 @@ exports.init = function(settings, app) {
 
         var sentData = false;
 
-        new Engine(options, prototols)
-
-            .makeStream(filepath, _.mixin(locals, {_yog: prototols}))
+        engine.makeStream(filepath,  _.mixin(locals, {_yog: prototols}))
 
             // 合并 tpl 流 和 bigpipe 流。
             .pipe(combine(prototols))
 
             .on('data', function() {
                 sentData = true;
+                if (!res.get('Content-Type')) {
+                    res.type('html');
+                }
             })
 
             .on('error', function(error) {
@@ -55,7 +53,7 @@ exports.init = function(settings, app) {
                     }
                     res.end();
                 } else {
-                    // 交给 express 去处理错误吧。
+                    // 模板渲染前报错，传递至next
                     done(error);
                 }
             })
@@ -64,19 +62,3 @@ exports.init = function(settings, app) {
             .pipe(res);
     };
 };
-
-// hack into response class.
-var hacked = false;
-function hackResponse(app) {
-    if (hacked) return;
-    hacked = true;
-
-    app.use(function hackResponse(req, res, next) {
-        var origin = res.__proto__;
-        response.__proto__ = origin;
-        res.__proto__ = response;
-        origin = null;
-
-        next();
-    });
-}
