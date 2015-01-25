@@ -1,4 +1,3 @@
-var response = require('./lib/response.js');
 var layer = require('./lib/layer.js');
 var combine = require('./lib/combine.js');
 var _ = require('./lib/util.js');
