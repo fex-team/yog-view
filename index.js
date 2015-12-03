@@ -43,7 +43,7 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
             if (!res.get('Content-Type')) {
                 res.type('html');
             }
-            process.nextTick(function () {
+            setImmediate(function () {
                 res.flush();
             });
         })
