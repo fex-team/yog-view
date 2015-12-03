@@ -43,6 +43,9 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
             if (!res.get('Content-Type')) {
                 res.type('html');
             }
+            process.nextTick(function () {
+                res.flush();
+            });
         })
         // bigpipe异步回调异常
         .on('error', function (error) {
