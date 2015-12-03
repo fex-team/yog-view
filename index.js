@@ -1,3 +1,5 @@
+'use strict';
+
 var layer = require('./lib/layer.js');
 var combine = require('./lib/combine.js');
 var _ = require('./lib/util.js');
@@ -10,8 +12,8 @@ function yogViewEngine(app, engine, settings) {
     });
 
     settings.views = app.get('views');
-    var engineClass = _.resolveEngine(engine);
-    this.engine = new engineClass(app, settings);
+    var EngineClass = _.resolveEngine(engine);
+    this.engine = new EngineClass(app, settings);
     this.settings = settings;
 }
 
@@ -31,36 +33,38 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
     var sentData = false;
 
     this.engine.makeStream(filepath, _.mixin(locals, {
-        _yog: prototols
-    }))
-    // 合并 tpl 流 和 bigpipe 流。
-    .pipe(combine(prototols))
-    // 设置默认content-type
-    .on('data', function () {
-        sentData = true;
-        if (!res.get('Content-Type')) {
-            res.type('html');
-        }
-    })
-    // bigpipe异步回调异常
-    .on('error', function (error) {
-        // 属于 chunk error
-        if (sentData) {
-            if (typeof settings.chunkErrorHandler === 'function') {
-                settings.chunkErrorHandler(error, res);
-            } else {
-                res.write('<script>window.console && console.error("chunk error", "' + error.message.replace(
-                    /"/g,
-                    "\\\"") + '")</script>');
+            _yog: prototols
+        }))
+        // 合并 tpl 流 和 bigpipe 流。
+        .pipe(combine(prototols))
+        // 设置默认content-type
+        .on('data', function () {
+            sentData = true;
+            if (!res.get('Content-Type')) {
+                res.type('html');
             }
-            res.end();
-        } else {
-            // 模板渲染前报错，传递至next
-            done(error);
-        }
-    })
-    // 直接输出到 response.
-    .pipe(res);
+        })
+        // bigpipe异步回调异常
+        .on('error', function (error) {
+            // 属于 chunk error
+            if (sentData) {
+                if (typeof settings.chunkErrorHandler === 'function') {
+                    settings.chunkErrorHandler(error, res);
+                }
+                else {
+                    res.write('<script>window.console && console.error("chunk error", "' + error.message.replace(
+                        /"/g,
+                        '\\\"') + '")</script>');
+                }
+                res.end();
+            }
+            else {
+                // 模板渲染前报错，传递至next
+                done(error);
+            }
+        })
+        // 直接输出到 response.
+        .pipe(res);
 };
 
 module.exports = yogViewEngine;
