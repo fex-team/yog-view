@@ -32,7 +32,7 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
 
     if (prototols.bigpipe.isSpiderMode) {
         // 获取所有异步pagelet信息
-        prototols.bigpipe.prepareAllSources(function (data) {
+        prototols.bigpipe.prepareAllSources().then(function (data) {
             render();
         });
     }
