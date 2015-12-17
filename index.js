@@ -34,6 +34,9 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
         // 获取所有异步pagelet信息
         prototols.bigpipe.prepareAllSources().then(function (data) {
             render();
+        }).catch(function (err) {
+            // prepareAllSources 不会因为数据准备异常而触发异常，而是错误的 bind 才会引发异常，比如没有返回一个 Promise
+            done(err);
         });
     }
     else {
