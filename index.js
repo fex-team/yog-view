@@ -54,7 +54,7 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
             // 设置默认content-type
             .on('data', function () {
                 sentData = true;
-                if (!res.get('Content-Type')) {
+                if (!res.get('Content-Type') && !res.headersSent) {
                     res.type('html');
                 }
                 setImmediate(function () {
