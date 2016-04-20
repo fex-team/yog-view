@@ -30,7 +30,7 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
     // 用来扩展模板层能力。
     var prototols = layer(res, settings);
 
-    if (prototols.bigpipe.isSpiderMode) {
+    if (prototols.bigpipe && prototols.bigpipe.isSpiderMode) {
         // 获取所有异步pagelet信息
         prototols.bigpipe.prepareAllSources().then(function (data) {
             render();
