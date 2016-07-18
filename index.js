@@ -29,23 +29,25 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
     // 提供 addScript, addStyle, resolve, addPagelet 各种接口。
     // 用来扩展模板层能力。
     var prototols = layer(res, settings);
-
+    var preFetch = [];
+    if (prototols.bigpipe && prototols.bigpipe.isQuicklingMode() === false) {
+        // 准备页面数据
+        preFetch.push(prototols.bigpipe.preparePageOnly().then(function (data) {
+            // 页面数据应与locals合并
+            if (data) {
+                _.mixin(locals, data);
+            }
+        }));
+    }
     if (prototols.bigpipe && prototols.bigpipe.isSpiderMode) {
         // 获取所有异步pagelet信息
-        prototols.bigpipe.prepareAllSources().then(function (data) {
-            render();
-        }).catch(function (err) {
-            // prepareAllSources 不会因为数据准备异常而触发异常，而是错误的 bind 才会引发异常，比如没有返回一个 Promise
-            done(err);
-        });
+        preFetch.push(prototols.bigpipe.prepareAllSources());
     }
-    else {
-        render();
-    }
+
+    Promise.all(preFetch).then(render).catch(done);
 
     function render() {
         var sentData = false;
-
         me.engine.makeStream(filepath, _.mixin(locals, {
                 _yog: prototols
             }))
