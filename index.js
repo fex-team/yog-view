@@ -3,6 +3,7 @@
 var layer = require('./lib/layer.js');
 var combine = require('./lib/combine.js');
 var _ = require('./lib/util.js');
+var Transform = require('stream').Transform;
 
 function yogViewEngine(app, engine, settings) {
     // 将res注入到locals中提供模板渲染时使用
@@ -25,6 +26,9 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
     var res = locals.__res__;
     var settings = this.settings;
     var me = this;
+    // 此处只能使用文字匹配的手段判断传入的回调是否是express默认回调，否则会无法使用pipe进行bigpipe输出
+    var hasCustomDone = done.toString().replace(/\s/g, '') != 'function(err,str){if(err)returnreq.next(err);self.send(str);};';
+
     // 初始化 layer 层。
     // 提供 addScript, addStyle, resolve, addPagelet 各种接口。
     // 用来扩展模板层能力。
@@ -48,7 +52,8 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
 
     function render() {
         var sentData = false;
-        me.engine.makeStream(filepath, _.mixin(locals, {
+        var content = [];
+        var renderStream = me.engine.makeStream(filepath, _.mixin(locals, {
                 _yog: prototols
             }))
             // 合并 tpl 流 和 bigpipe 流。
@@ -86,8 +91,19 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
                     done(error);
                 }
             })
-            // 直接输出到 response.
-            .pipe(res);
+            .on('data', function (data) {
+                if (hasCustomDone) {
+                    content.push(data);
+                }
+            })
+            .on('end', function () {
+                if (hasCustomDone) {
+                    done && done(null, Buffer.concat(content));
+                }
+            });
+        if (!hasCustomDone) {
+            renderStream.pipe(res);
+        }
     }
 };
 
