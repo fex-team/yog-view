@@ -98,7 +98,7 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
             })
             .on('end', function () {
                 if (hasCustomDone) {
-                    done && done(null, Buffer.concat(content));
+                    done && done(null, Buffer.concat(content).toString());
                 }
             });
         if (!hasCustomDone) {
