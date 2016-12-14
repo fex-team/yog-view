@@ -57,7 +57,9 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
                 _yog: prototols
             }))
             // 合并 tpl 流 和 bigpipe 流。
-            .pipe(combine(prototols))
+            .pipe(combine(prototols, {
+                customFilter: res.customFilter
+            }))
             // 设置默认content-type
             .on('data', function () {
                 sentData = true;
