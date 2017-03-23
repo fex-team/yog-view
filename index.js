@@ -27,7 +27,7 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
     var settings = this.settings;
     var me = this;
     // 此处只能使用文字匹配的手段判断传入的回调是否是express默认回调，否则会无法使用pipe进行bigpipe输出
-    var hasCustomDone = done.toString().replace(/\s/g, '') != 'function(err,str){if(err)returnreq.next(err);self.send(str);};';
+    var hasCustomDone = done.toString().replace(/[\s;]/g, '') != 'function(err,str){if(err)returnreq.next(err)self.send(str)}';
 
     // 初始化 layer 层。
     // 提供 addScript, addStyle, resolve, addPagelet 各种接口。
