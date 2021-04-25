@@ -71,7 +71,7 @@ yogViewEngine.prototype.renderFile = function (filepath, locals, done) {
                     }
                 }
                 setImmediate(function () {
-                    res.flush();
+                    res.flush && res.flush();
                 });
             })
             // bigpipe异步回调异常
